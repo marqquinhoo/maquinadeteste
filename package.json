@@ -1,0 +1,14 @@
+{
+  "name": "autoteste-platform",
+  "version": "1.2.0",
+  "description": "AutoTesteAI Platform - Root Manager",
+  "scripts": {
+    "backend": "cd backend && npm start",
+    "frontend": "cd frontend && npm run dev",
+    "setup": "npm install && cd backend && npm install && cd ../frontend && npm install",
+    "start": "npx concurrently \"npm run backend\" \"npm run frontend\""
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}
