@@ -23,7 +23,7 @@ async function runCypressTest(testId, testData, io, onUpdate = () => { }) {
         onUpdate(testData);
     };
 
-    addLog(`🚀 Iniciando Motor AutoTesteAI (Cypress)...`, 'info');
+    addLog(`🚀 Iniciando Maquina de Testes (Cypress)...`, 'info');
 
     let tasks = [];
     try {
@@ -36,29 +36,31 @@ async function runCypressTest(testId, testData, io, onUpdate = () => { }) {
         tasks = lines.map(line => ({ action: 'click', selector: `text="${line}"`, description: line }));
     }
 
+    const specSteps = tasks.map((t, i) => {
+        let code = '';
+        if (t.action === 'access') {
+            code = `cy.visit('${t.url || t.value}');`;
+        } else if (t.action === 'click') {
+            let sel = t.selector.startsWith('text=') ? `contains('${t.selector.replace('text=', '').replace(/"/g, '')}')` : `get('${t.selector}')`;
+            code = `cy.${sel}.click();`;
+        } else if (t.action === 'type') {
+            const isSensitive = t.elementType === 'Input Password' || (t.selector && /password|pass|senha|token|secret/i.test(t.selector));
+            const displayValue = isSensitive ? '<REDACTED>' : t.value;
+            code = `cy.log("✍️ Digitando '${displayValue}' em '${t.selector}'");\n        cy.get("${t.selector}").type("${t.value}");`;
+        } else if (t.action === 'wait') {
+            code = `cy.wait(${parseInt(t.value) || 3000});`;
+        }
+        code += `\n        cy.screenshot('${testId}_step${i + 1}', { overwrite: true });`;
+        return code;
+    }).join('\n        ');
+
     const specCode = `
     describe('AutoTesteAI - ${testId}', () => {
       it('Executa o fluxo', () => {
         cy.visit('${url}');
         cy.screenshot('${testId}_initial', { overwrite: true });
 
-        ${tasks.map((t, i) => {
-        let code = '';
-        if (t.action === 'access') {
-            code = `cy.visit('${t.url || t.value}');`;
-        } else if (t.action === 'click') {
-            let sel = t.selector.startsWith('text=') ?\`contains('\${t.selector.replace('text=', '').replace(/"/g, '')}')\` : \`get('\${t.selector}')\`;
-             code = `cy.\${ sel }.click(); `;
-           } else if (t.action === 'type') {
-             let sel = t.selector.startsWith('text=') ? \`contains('\${t.selector.replace('text=', '').replace(/"/g, '')}')\` : \`get('\${t.selector}')\`;
-             code = `cy.\${ sel }.type('${t.value}'); `;
-           } else if (t.action === 'wait') {
-             code = `cy.wait(${ parseInt(t.value) || 3000
-        }); `;
-           }
-           code += `\\n        cy.screenshot('${testId}_step${i+1}', { overwrite: true }); `;
-           return code;
-        }).join('\n        ')}
+        ${specSteps}
       });
     });
   `;
@@ -82,12 +84,38 @@ async function runCypressTest(testId, testData, io, onUpdate = () => { }) {
             }
         });
 
-        if (result.status === 'failed' || result.totalFailed > 0) {
-            addLog(`❌ Cypress encontrou falhas. (Consulte os screenshots)`, 'error');
+        // Debug result structure in console
+        console.log('Cypress Run Result:', JSON.stringify(result, null, 2));
+
+        if (!result.runs) {
+            const msg = result.message || 'Erro desconhecido na execução do Cypress';
+            addLog(`❌ Falha no Cypress: ${msg}`, 'error');
             testData.status = 'failed';
         } else {
-            addLog(`✅ Fluxo concluído com sucesso no Cypress.`, 'success');
-            testData.status = 'completed';
+            const totalFailed = result.totalFailed || 0;
+            if (totalFailed > 0) {
+                addLog(`❌ Cypress encontrou ${totalFailed} falha(s).`, 'error');
+                testData.status = 'failed';
+            } else {
+                addLog(`✅ Fluxo concluído com sucesso no Cypress.`, 'success');
+                testData.status = 'completed';
+            }
+
+            // Detailed logs from results
+            result.runs.forEach(run => {
+                if (run.tests) {
+                    run.tests.forEach(test => {
+                        const state = test.state;
+                        const title = test.title.join(' > ');
+                        const icon = state === 'passed' ? '✅' : '❌';
+                        addLog(`${icon} Teste: ${title} (${state})`, state === 'passed' ? 'success' : 'error');
+
+                        if (test.displayError) {
+                            addLog(`💡 Erro: ${test.displayError}`, 'error');
+                        }
+                    });
+                }
+            });
         }
 
         // Capture screenshots from results and move/rename them properly to public/screenshots

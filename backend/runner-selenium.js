@@ -28,7 +28,7 @@ async function runSeleniumTest(testId, testData, io, onUpdate = () => { }) {
     };
 
     try {
-        addLog(`🚀 Iniciando Motor AutoTesteAI (Selenium)...`, 'info');
+        addLog(`🚀 Iniciando Maquina de Testes (Selenium)...`, 'info');
 
         let navigationUrl = url;
         if (fs.existsSync(url)) {
@@ -77,18 +77,30 @@ async function runSeleniumTest(testId, testData, io, onUpdate = () => { }) {
                     }
 
                     if (task.action === 'click') {
-                        const by = mapSelector(task.selector);
-                        const element = await driver.wait(until.elementLocated(by), 10000);
-                        await driver.wait(until.elementIsVisible(element), 10000);
-                        await element.click();
-                        addLog(`🖱️ Sucesso: CLICK realizado.`, 'success');
+                        if (!task.selector) {
+                            addLog(`⚠️ Aviso: Ação CLICK ignorada (seletor vazio).`, 'warning');
+                        } else {
+                            const by = mapSelector(task.selector);
+                            const element = await driver.wait(until.elementLocated(by), 10000);
+                            await driver.wait(until.elementIsVisible(element), 10000);
+                            await element.click();
+                            addLog(`🖱️ Sucesso: CLICK realizado em "${task.selector}".`, 'success');
+                        }
                     } else if (task.action === 'type') {
-                        const by = mapSelector(task.selector);
-                        const element = await driver.wait(until.elementLocated(by), 10000);
-                        await driver.wait(until.elementIsVisible(element), 10000);
-                        await element.clear();
-                        await element.sendKeys(task.value);
-                        addLog(`⌨️ Sucesso: Preenchido com "${task.value}".`, 'success');
+                        if (!task.selector) {
+                            addLog(`⚠️ Aviso: Ação TYPE ignorada (seletor vazio).`, 'warning');
+                        } else {
+                            const isSensitive = (task.selector && /password|pass|senha|token|secret/i.test(task.selector));
+                            const displayValue = isSensitive ? '<REDACTED>' : task.value;
+                            addLog(`✍️ Digitando '${displayValue}' em '${task.selector}'...`, 'info');
+
+                            const by = mapSelector(task.selector);
+                            const element = await driver.wait(until.elementLocated(by), 10000);
+                            await driver.wait(until.elementIsVisible(element), 10000);
+                            await element.clear();
+                            await element.sendKeys(task.value);
+                            addLog(`⌨️ Sucesso: "${displayValue}" digitado em "${task.selector}".`, 'success');
+                        }
                     } else if (task.action === 'request') {
                         addLog(`⚠️ [Aviso API] Simulação via JS Fetch.`, 'info');
                         await driver.executeAsyncScript(`

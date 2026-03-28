@@ -27,7 +27,7 @@ async function runPlaywrightTest(testId, testData, io, onUpdate = () => { }) {
         page.on('pageerror', exception => { addLog(`💥 [EXCEÇÃO JS] ${exception.message}`, 'error'); });
         page.on('response', response => { if (response.status() >= 400) addLog(`🛑 [HTTP ${response.status()}] ${response.url()}`, 'error'); });
 
-        addLog(`🚀 Iniciando Motor AutoTesteAI (Playwright)...`, 'info');
+        addLog(`🚀 Iniciando Maquina de Testes (Playwright)...`, 'info');
 
         let navigationUrl = url;
         if (fs.existsSync(url)) {
@@ -68,15 +68,27 @@ async function runPlaywrightTest(testId, testData, io, onUpdate = () => { }) {
                     }
 
                     if (task.action === 'click') {
-                        await page.waitForSelector(task.selector, { timeout: 10000, state: 'visible' });
-                        await page.click(task.selector);
-                        await page.waitForLoadState('networkidle', { timeout: 5000 }).catch(() => { });
-                        addLog(`🖱️ Sucesso: CLICK realizado.`, 'success');
+                        if (!task.selector) {
+                            addLog(`⚠️ Aviso: Ação CLICK ignorada (seletor vazio).`, 'warning');
+                        } else {
+                            await page.waitForSelector(task.selector, { timeout: 15000, state: 'visible' });
+                            await page.click(task.selector);
+                            await page.waitForLoadState('networkidle', { timeout: 5000 }).catch(() => { });
+                            addLog(`🖱️ Sucesso: CLICK realizado em "${task.selector}".`, 'success');
+                        }
                     } else if (task.action === 'type') {
-                        await page.waitForSelector(task.selector, { timeout: 10000, state: 'visible' });
-                        await page.click(task.selector);
-                        await page.fill(task.selector, task.value);
-                        addLog(`⌨️ Sucesso: Preenchido com "${task.value}".`, 'success');
+                        if (!task.selector) {
+                            addLog(`⚠️ Aviso: Ação TYPE ignorada (seletor vazio). Tentando digitar no elemento focado...`, 'warning');
+                            await page.keyboard.type(task.value);
+                        } else {
+                            const isSensitive = task.elementType === 'Input Password' || (task.selector && /password|pass|senha|token|secret/i.test(task.selector));
+                            const displayValue = isSensitive ? '<REDACTED>' : task.value;
+
+                            await page.waitForSelector(task.selector, { timeout: 15000, state: 'visible' });
+                            await page.click(task.selector);
+                            await page.fill(task.selector, task.value);
+                            addLog(`⌨️ Sucesso: "${displayValue}" digitado em "${task.selector}".`, 'success');
+                        }
                     } else if (task.action === 'request') {
                         const requestUrl = task.url.startsWith('http') ? task.url : new URL(task.url, page.url()).href;
                         const response = await page.request.fetch(requestUrl, {

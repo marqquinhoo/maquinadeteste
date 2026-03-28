@@ -47,6 +47,8 @@ testes-dev/
 Crie um projeto no Supabase e copie a chave de conexão do Database (Transaction Pooler). Configure o seu arquivo `.env` dentro da pasta `backend`:
 ```env
 DATABASE_URL=postgresql://postgres:[SUA-SENHA]@db.[sua-rota].supabase.co:5432/postgres
+API_PREFIX=/maquinadeteste
+SOCKET_PATH=/maquinadeteste/socket.io
 ```
 
 ### 2. Configurar o Backend e Instalar Browsers
@@ -94,7 +96,7 @@ Se preferir, você pode usar o script de automação corrigido:
     cd frontend
     npm run dev
     ```
-3.  **Acesso:** Abra **http://localhost:5173** no seu navegador. Os relatórios de API apontam para a **porta 8084**.
+3.  **Acesso:** Abra **http://localhost:5173** no seu navegador. Os relatórios de API apontam para a **porta 3002**.
 
 ---
 
@@ -107,12 +109,27 @@ Se preferir, você pode usar o script de automação corrigido:
 
 ---
 
-## 🔧 Tecnologias Utilizadas
+## � Segurança e Controle de Acesso (Admin)
 
-- **Playwright / Selenium / Cypress**: Tríade de engines para automação cross-browser.
-- **Express / Node.js**: API REST para gerenciamento de testes e orquestração.
-- **Socket.io**: Comunicação bidirecional para logs em tempo real.
-- **Supabase (PostgreSQL)**: Persistência distribuída no banco de dados.
-- **React 19**: Frontend moderno e reativo.
-- **Framer Motion**: Animações de interface.
-- **Lucide Icons**: Conjunto de ícones premium.
+O motor do AutoTesteAI foi projetado para rodar em um ambiente corporativo controlado. Para evitar execuções fora de contexto (como testes em sites adultos, redes não relacionadas ao negócio ou domínios não autorizados), a plataforma possui uma **lista restrita de URLs permitidas**.
+
+- **Painel Administrativo (`/config`)**: O responsável pelos testes (QA Lead / Manager) deve acessar a aba de Configurações no menu lateral para cadastrar as URLs base e portas locais do projeto.
+- **Credenciais Iniciais**: O acesso padrão é `admin` / `admin123`. No primeiro login, o sistema exigirá a troca obrigatória da senha para sua segurança.
+- Apenas os domínios liberados nesta tela estarão disponíveis para o usuário comum selecionar e iniciar os fluxos de teste na página inicial. A responsabilidade por essas configurações fica a cargo da equipe gestora.
+
+---
+
+## �🔧 Tecnologias Utilizadas
+
+### ⚙️ Backend (Orquestrador e API)
+- **Node.js & Express**: Base do servidor responsável por expor a API RESTful e orquestrar as execuções dos testes de forma assíncrona.
+- **Motores de Teste (Playwright, Selenium WebDriver, Cypress)**: A tríade de engines utilizada para interagir com o DOM e executar a automação cross-browser, permitindo ampla cobertura e simulação de uso real.
+- **Knex.js & pg**: Ferramentas responsáveis por construir queries seguras e conectar-se de forma nativa ao PostgreSQL.
+- **Socket.io**: WebSockets integrados para enviar logs, status e etapas de execução em tempo real para a interface de usuário.
+- **Supabase (PostgreSQL)**: Banco de dados relacional (na nuvem) de alta performance utilizado para registrar o histórico de relatórios.
+
+### 🎨 Frontend (Dashboard e Interface)
+- **React 19 & Vite**: Framework super reativo e servidor de desenvolvimento ágil para a criação da interface do usuário (SPA).
+- **React Router DOM**: Gerenciamento das rotas locais e navegação fluida entre histórico e novas automações.
+- **Axios**: Cliente HTTP para padronizar o consumo e comunicação com a API do backend.
+- **Framer Motion & Lucide React**: Responsáveis, respectivamente, por transições modernas na interface de usuário e iconografia escalável.

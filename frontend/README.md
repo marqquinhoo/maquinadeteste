@@ -17,7 +17,7 @@ Dashboard premium para gerenciamento de automação de testes exploratórios.
    npm install
    ```
 
-2. Configure a URL do backend no arquivo `App.jsx` (padrão: `http://localhost:3001`).
+2. Configure a URL do backend no arquivo `App.jsx` (padrão: `http://localhost:3002`).
 
 3. Rode em modo desenvolvimento:
    ```bash
