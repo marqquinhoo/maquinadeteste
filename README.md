@@ -1,4 +1,4 @@
-# 🛡️ AutoTesteAI (Testes Inteligentes Multi-Motor)
+# 🛡️ MCP Maquina de Testes (Testes Inteligentes Multi-Motor)
 
 Uma plataforma de automação e descoberta de testes ponta-a-ponta, utilizando múltiplos motores dinâmicos (**Playwright**, **Selenium WebDriver** e **Cypress**). Desenvolvida para ser flexível, permitindo testar tanto aplicações web públicas quanto projetos locais através de uma interface moderna e intuitiva, com persistência na nuvem pelo **Supabase**.
 
