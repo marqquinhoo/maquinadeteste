@@ -5,14 +5,15 @@ const knex = require('knex')(knexConfig.development);
  * Saves or updates a test session in MySQL.
  */
 async function saveTestSession(session) {
-  const { id, url, goal, context, status, logs, screenshots, startTime, endTime } = session;
-  
+  const { id, url, goal, context, status, logs, screenshots, startTime, endTime, engine } = session;
+
   const serialized = {
     id,
     url,
     goal,
     context: typeof context === 'string' ? context : JSON.stringify(context),
     status,
+    engine: engine || 'playwright',
     logs: JSON.stringify(logs),
     screenshots: JSON.stringify(screenshots),
     startTime: startTime ? new Date(startTime).toISOString().slice(0, 19).replace('T', ' ') : null,
@@ -23,14 +24,15 @@ async function saveTestSession(session) {
     // MySQL Upsert pattern (INSERT ... ON DUPLICATE KEY UPDATE)
     const existing = await knex('TestSessions').where({ id }).first();
     if (existing) {
-       await knex('TestSessions').where({ id }).update({
-          status: serialized.status,
-          logs: serialized.logs,
-          screenshots: serialized.screenshots,
-          endTime: serialized.endTime
-       });
+      await knex('TestSessions').where({ id }).update({
+        status: serialized.status,
+        engine: serialized.engine,
+        logs: serialized.logs,
+        screenshots: serialized.screenshots,
+        endTime: serialized.endTime
+      });
     } else {
-       await knex('TestSessions').insert(serialized);
+      await knex('TestSessions').insert(serialized);
     }
   } catch (err) {
     console.error("DB Error in saveTestSession:", err.message);
@@ -111,13 +113,13 @@ async function removeTestSession(id) {
   }
 }
 
-module.exports = { 
-  saveTestSession, 
-  getTestSessions, 
-  getTestSessionById, 
-  knex, 
-  getAllowedUrls, 
-  addAllowedUrl, 
+module.exports = {
+  saveTestSession,
+  getTestSessions,
+  getTestSessionById,
+  knex,
+  getAllowedUrls,
+  addAllowedUrl,
   removeAllowedUrl,
   removeTestSession
 };

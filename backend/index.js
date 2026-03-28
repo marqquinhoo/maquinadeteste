@@ -5,9 +5,9 @@ const cors = require('cors');
 const path = require('path');
 const fs = require('fs');
 const { runGenericTest } = require('./runner');
-const { 
-  saveTestSession, 
-  getTestSessions, 
+const {
+  saveTestSession,
+  getTestSessions,
   getTestSessionById,
   getAllowedUrls,
   addAllowedUrl,
@@ -38,8 +38,8 @@ const router = express.Router();
 router.use('/screenshots', express.static(path.join(__dirname, 'public/screenshots')));
 
 router.post('/api/tests/run', async (req, res) => {
-  const { url, goal, context } = req.body;
-  
+  const { url, goal, context, engine } = req.body;
+
   if (!url) {
     return res.status(400).json({ error: 'URL is required' });
   }
@@ -51,6 +51,7 @@ router.post('/api/tests/run', async (req, res) => {
     goal,
     context,
     status: 'starting',
+    engine: engine || 'playwright',
     logs: [],
     screenshots: [],
     startTime: new Date()
@@ -58,9 +59,9 @@ router.post('/api/tests/run', async (req, res) => {
 
   try {
     await saveTestSession(testData);
-    
+
     runGenericTest(testId, testData, io, async (updatedData) => {
-       await saveTestSession(updatedData);
+      await saveTestSession(updatedData);
     })
       .then(async () => {
         testData.status = 'completed';
